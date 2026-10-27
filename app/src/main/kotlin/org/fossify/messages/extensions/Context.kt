@@ -76,6 +76,7 @@ import org.fossify.messages.models.Message
 import org.fossify.messages.models.MessageAttachment
 import org.fossify.messages.models.NamePhoto
 import org.fossify.messages.models.RecycleBinMessage
+import org.fossify.messages.models.SpamMessage
 import org.xmlpull.v1.XmlPullParserException
 import java.io.FileNotFoundException
 import kotlin.time.Duration.Companion.minutes
@@ -938,6 +939,39 @@ fun Context.moveMessageToRecycleBin(id: Long) {
     }
 }
 
+@Suppress("SpreadOperator")
+fun Context.markMessagesAsSpam(messages: List<Message>) {
+    try {
+        messagesDB.insertMessages(*messages.toTypedArray())
+        messagesDB.insertSpam(
+            *messages.map { SpamMessage(it.id, it.isMMS, it.threadId, kind = SpamMessage.KIND_MANUAL_SPAM) }
+                .toTypedArray()
+        )
+    } catch (e: Exception) {
+        showErrorToast(e)
+    }
+}
+
+@Suppress("SpreadOperator")
+fun Context.unmarkMessagesAsSpam(messages: List<Message>) {
+    try {
+        messagesDB.insertSpam(
+            *messages.map { SpamMessage(it.id, it.isMMS, it.threadId, kind = SpamMessage.KIND_NOT_SPAM) }
+                .toTypedArray()
+        )
+    } catch (e: Exception) {
+        showErrorToast(e)
+    }
+}
+
+fun Context.unmarkConversationAsSpam(threadId: Long) {
+    try {
+        messagesDB.markThreadNotSpam(threadId)
+    } catch (e: Exception) {
+        showErrorToast(e)
+    }
+}
+
 fun Context.restoreMessageFromRecycleBin(id: Long) {
     try {
         messagesDB.deleteFromRecycleBin(id)
@@ -980,6 +1014,7 @@ fun Context.deleteMessage(id: Long, isMMS: Boolean) {
     try {
         contentResolver.delete(uri, selection, selectionArgs)
         messagesDB.delete(id)
+        messagesDB.deleteSpam(id, isMMS)
     } catch (e: Exception) {
         showErrorToast(e)
     }

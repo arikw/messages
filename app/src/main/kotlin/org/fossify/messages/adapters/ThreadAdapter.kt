@@ -5,6 +5,7 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.util.TypedValue
 import android.view.Menu
 import android.view.View
@@ -41,6 +42,7 @@ import org.fossify.commons.extensions.getTextSize
 import org.fossify.commons.extensions.getTimeFormat
 import org.fossify.commons.extensions.shareTextIntent
 import org.fossify.commons.extensions.showErrorToast
+import org.fossify.commons.extensions.toast
 import org.fossify.commons.extensions.usableScreenSize
 import org.fossify.commons.helpers.FontHelper
 import org.fossify.commons.helpers.SimpleContactsHelper
@@ -70,9 +72,16 @@ import org.fossify.messages.extensions.isPlayableAudioMimeType
 import org.fossify.messages.extensions.isVCardMimeType
 import org.fossify.messages.extensions.isVideoMimeType
 import org.fossify.messages.extensions.launchViewIntent
+import org.fossify.messages.extensions.markMessagesAsSpam
+import org.fossify.messages.extensions.unmarkMessagesAsSpam
 import org.fossify.messages.extensions.startContactDetailsIntent
 import org.fossify.messages.extensions.subscriptionManagerCompat
+import org.fossify.messages.helpers.refreshConversations
+import org.fossify.messages.helpers.refreshMessages
 import org.fossify.messages.helpers.EXTRA_VCARD_URI
+import org.fossify.messages.helpers.SpamMatcher
+import org.fossify.messages.helpers.applySpamRulesToExistingMessages
+import org.fossify.messages.helpers.highlightSpamRanges
 import org.fossify.messages.helpers.THREAD_DATE_TIME
 import org.fossify.messages.helpers.THREAD_RECEIVED_MESSAGE
 import org.fossify.messages.helpers.THREAD_SENT_MESSAGE
@@ -101,6 +110,13 @@ class ThreadAdapter(
 ) : MyRecyclerViewListAdapter<ThreadItem>(activity, recyclerView, ThreadItemDiffCallback(), itemClick) {
     private var fontSize = activity.getTextSize()
 
+    // (message id, is MMS) of this conversation's spam messages
+    private var spamKeys = emptySet<Pair<Long, Boolean>>()
+
+    // ...and the ones the owner marked "not spam"
+    private var notSpamKeys = emptySet<Pair<Long, Boolean>>()
+    private var spamMatcher: SpamMatcher? = null
+
     @SuppressLint("MissingPermission")
     private val hasMultipleSIMCards = (activity.subscriptionManagerCompat().activeSubscriptionInfoList?.size ?: 0) > 1
     private val maxChatBubbleWidth = (activity.usableScreenSize.x * 0.8f).toInt()
@@ -109,6 +125,9 @@ class ThreadAdapter(
         private const val MAX_MEDIA_HEIGHT_RATIO = 3
         private const val SIM_BITS = 21
         private const val SIM_MASK = (1L shl SIM_BITS) - 1
+        private const val SPAM_TAG_COLOR = 0xFFD32F2F.toInt()
+        private const val NOT_SPAM_TAG_COLOR = 0xFF757575.toInt()
+        private const val SUSPICIOUS_TAG_COLOR = 0xFFEF6C00.toInt()
     }
 
     init {
@@ -135,6 +154,10 @@ class ThreadAdapter(
             findItem(R.id.cab_select_text).isVisible = isOneItemSelected && hasText
             findItem(R.id.cab_properties).isVisible = isOneItemSelected
             findItem(R.id.cab_restore).isVisible = isRecycleBin
+            findItem(R.id.cab_mark_as_spam).isVisible =
+                !isRecycleBin && selectedMessages.any { !isSpam(it) && !it.isScheduled }
+            findItem(R.id.cab_not_spam).isVisible = !isRecycleBin && selectedMessages.any { isSpam(it) }
+            findItem(R.id.cab_spam_keyword_from_message).isVisible = !isRecycleBin && isOneItemSelected && hasText
         }
     }
 
@@ -151,6 +174,9 @@ class ThreadAdapter(
             R.id.cab_select_text -> selectText()
             R.id.cab_delete -> askConfirmDelete()
             R.id.cab_restore -> askConfirmRestore()
+            R.id.cab_mark_as_spam -> markSelectedAsSpam(true)
+            R.id.cab_not_spam -> markSelectedAsSpam(false)
+            R.id.cab_spam_keyword_from_message -> pickSpamKeyword()
             R.id.cab_select_all -> selectAll()
             R.id.cab_properties -> showMessageDetails()
         }
@@ -268,6 +294,23 @@ class ThreadAdapter(
         }
     }
 
+    // Select a word in the message to add it as a spam keyword.
+    private fun pickSpamKeyword() {
+        val firstItem = getSelectedItems().firstOrNull() as? Message ?: return
+        if (firstItem.body.trim().isEmpty()) {
+            return
+        }
+
+        SelectTextDialog(activity, firstItem.body) {
+            // mark the messages that have the new keyword, this conversation included
+            ensureBackgroundThread {
+                val (marked, unmarked) = activity.applySpamRulesToExistingMessages()
+                activity.toast(activity.getString(R.string.existing_messages_checked, marked, unmarked))
+                refreshMessages()
+            }
+        }
+    }
+
     private fun showMessageDetails() {
         val message = getSelectedItems().firstOrNull() as? Message ?: return
         MessageDetailsDialog(activity, message)
@@ -326,6 +369,55 @@ class ThreadAdapter(
         }
     }
 
+    private fun isSpam(message: Message) = (message.id to message.isMMS) in spamKeys
+
+    @SuppressLint("NotifyDataSetChanged")
+    fun setSpamKeys(keys: Set<Pair<Long, Boolean>>, notSpam: Set<Pair<Long, Boolean>>) {
+        // read the lists again, they may have changed since the conversation was opened
+        spamMatcher = SpamMatcher(activity)
+        if (keys != spamKeys || notSpam != notSpamKeys) {
+            spamKeys = keys
+            notSpamKeys = notSpam
+            notifyDataSetChanged()
+        }
+    }
+
+    // The tag above a message: spam (red), marked "not spam" (grey), or has a spam keyword but isn't spam (orange).
+    private fun spamTag(message: Message, hasKeyword: Boolean): Pair<Int, Int>? {
+        val matcher = spamMatcher
+        return when {
+            isSpam(message) && matcher?.isSpamNumber(message.senderPhoneNumber) == true ->
+                R.string.spam_from_spam_number to SPAM_TAG_COLOR
+            isSpam(message) -> R.string.spam_tag to SPAM_TAG_COLOR
+            (message.id to message.isMMS) in notSpamKeys -> R.string.not_spam_tag to NOT_SPAM_TAG_COLOR
+            hasKeyword && matcher?.isExemptNumber(message.senderPhoneNumber) == true ->
+                R.string.suspicious_exempt_tag to SUSPICIOUS_TAG_COLOR
+            hasKeyword -> R.string.suspicious_tag to SUSPICIOUS_TAG_COLOR
+            else -> null
+        }
+    }
+
+    private fun markSelectedAsSpam(spam: Boolean) {
+        val selected = getSelectedItems().filterIsInstance<Message>().filterNot { it.isScheduled }
+        ensureBackgroundThread {
+            if (spam) {
+                activity.markMessagesAsSpam(selected.filterNot { isSpam(it) })
+            } else {
+                activity.unmarkMessagesAsSpam(selected.filter { isSpam(it) })
+            }
+            val keys = selected.map { it.id to it.isMMS }
+            activity.runOnUiThread {
+                if (spam) {
+                    setSpamKeys(spamKeys + keys, notSpamKeys - keys.toSet())
+                } else {
+                    setSpamKeys(spamKeys - keys.toSet(), notSpamKeys + keys)
+                }
+                finishActMode()
+                refreshConversations()
+            }
+        }
+    }
+
     private fun forwardMessage() {
         val message = getSelectedItems().firstOrNull() as? Message ?: return
         val attachment = message.attachment?.attachments?.firstOrNull()
@@ -369,8 +461,19 @@ class ThreadAdapter(
     private fun setupView(holder: ViewHolder, view: View, message: Message) {
         ItemMessageBinding.bind(view).apply {
             threadMessageHolder.isSelected = selectedKeys.contains(message.getSelectionKey())
+            // spam keywords are highlighted in every message, spam or not, so it's clear what looks suspicious
+            val keywordRanges = spamMatcher?.keywordMatches(message.body).orEmpty()
+            val tag = spamTag(message, keywordRanges.isNotEmpty())
+            threadMessageSpamLabel.beVisibleIf(tag != null)
+            if (tag != null) {
+                threadMessageSpamLabel.text = activity.getString(tag.first)
+                threadMessageSpamLabel.background = GradientDrawable().apply {
+                    setColor(tag.second)
+                    cornerRadius = activity.resources.getDimension(org.fossify.commons.R.dimen.small_margin)
+                }
+            }
             threadMessageBody.apply {
-                text = message.body
+                text = highlightSpamRanges(message.body, keywordRanges)
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize)
                 beVisibleIf(message.body.isNotEmpty())
                 setOnLongClickListener {

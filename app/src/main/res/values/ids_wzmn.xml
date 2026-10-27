@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ids added by the net.wzmn.messages fork. -->
+<resources>
+    <item name="add_as_spam_keyword" type="id" />
+</resources>

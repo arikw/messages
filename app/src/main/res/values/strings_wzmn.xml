@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings added by the net.wzmn.messages fork, kept apart from the upstream files. -->
+<resources>
+    <string name="fork_launcher_name">Messages+</string>
+    <string name="spam">Spam</string>
+    <string name="no_spam_conversations">No spam</string>
+    <string name="mark_as_spam">Mark as spam</string>
+    <string name="spam_from_spam_number">⚠ Spam · from a spam number</string>
+    <string name="not_spam">Not spam</string>
+    <string name="spam_keywords">Spam keywords</string>
+    <string name="no_spam_keywords">No spam keywords. Messages containing one go to Spam, without a notification.</string>
+    <string name="add_spam_keyword">Add a spam keyword</string>
+    <string name="spam_numbers">Spam numbers</string>
+    <string name="no_spam_numbers">No spam numbers. Messages from them go to Spam, without a notification. Calls are not affected.</string>
+    <string name="add_spam_number">Add a spam number</string>
+    <string name="spam_number_hint">Number (patterns like +1555* work too)</string>
+    <string name="whole_word_only">Whole word only</string>
+    <string name="keyword_whole_word">%s (whole word)</string>
+    <string name="check_existing_messages">Update spam marks</string>
+    <string name="checking_existing_messages">Updating spam marks…</string>
+    <string name="existing_messages_checked">Done: %1$d marked as spam, %2$d unmarked</string>
+    <string name="add_as_spam_keyword">Spam keyword</string>
+    <string name="loading_keyword_preview">Looking through received messages…</string>
+    <string name="keyword_preview_none">No received message contains it</string>
+    <plurals name="keyword_preview_count">
+        <item quantity="one">%d received message contains it:</item>
+        <item quantity="other">%d received messages contain it:</item>
+    </plurals>
+    <string name="keyword_preview_more">… and %d more</string>
+    <string name="spam_keyword_from_message">Mark spam keywords…</string>
+    <string name="select_spam_keyword_title">Long-press a word, adjust the selection, then tap “Spam keyword”</string>
+    <string name="spam_tag">⚠ Spam</string>
+    <string name="not_spam_tag">Marked not spam</string>
+    <string name="suspicious_tag">Spam keyword</string>
+    <string name="suspicious_exempt_tag">Spam keyword · exempt number</string>
+    <string name="show_only_suspicious">Only suspicious messages</string>
+    <string name="showing_only_suspicious">Showing only spam and messages with a spam keyword</string>
+    <string name="exempt_from_spam">Never spam from this number</string>
+    <string name="unexempt_from_spam">Stop exempting this number from spam</string>
+    <string name="spam_exempt_numbers">Numbers exempt from spam</string>
+    <string name="no_spam_exempt_numbers">No exempt numbers. Messages from an exempt number are never marked as spam, even with a spam keyword.</string>
+    <string name="add_spam_exempt_number">Add an exempt number</string>
+    <string name="mark_sender_as_spam">Mark sender as spam</string>
+    <string name="unmark_sender_as_spam">Stop marking this sender as spam</string>
+    <string name="spam_and_blocking">Spam and blocking</string>
+    <string name="blocked_numbers_explanation">The phone’s own block list, shared with the phone app and other messaging apps. Texts from these numbers are thrown away before any app gets them and can’t be recovered, and their calls are blocked. To keep a number’s texts quietly in Spam instead, use Spam numbers.</string>
+    <string name="about_credits">Credits</string>
+    <string name="about_based_on">Based on Fossify Messages</string>
+    <string name="about_based_on_explanation">A modified version of Fossify Messages by the Fossify contributors, free software under the GNU General Public License, version 3. Changes: spam that is kept and can be read. Tap to open the original\'s source code.</string>
+</resources>

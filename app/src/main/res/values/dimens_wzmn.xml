@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Dimensions added by the net.wzmn.messages fork. -->
+<resources>
+    <dimen name="spam_preview_height">240dp</dimen>
+    <dimen name="spam_tag_gap">10dp</dimen>
+    <dimen name="spam_tag_padding_end">16dp</dimen>
+</resources>

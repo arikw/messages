@@ -115,7 +115,8 @@ android {
         )
     }
 
-    namespace = project.property("APP_ID").toString()
+    // The code stays in org.fossify.messages; only the installed package (APP_ID) changes.
+    namespace = "org.fossify.messages"
 
     lint {
         checkReleaseBuilds = false

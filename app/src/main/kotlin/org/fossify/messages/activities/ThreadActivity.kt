@@ -156,6 +156,9 @@ import org.fossify.messages.extensions.updateConversationArchivedStatus
 import org.fossify.messages.extensions.updateLastConversationMessage
 import org.fossify.messages.extensions.updateScheduledMessagesThreadId
 import org.fossify.messages.helpers.AudioPlayerManager
+import org.fossify.messages.helpers.SpamMatcher
+import org.fossify.messages.helpers.applySpamRulesToExistingMessages
+import org.fossify.messages.models.SpamMessage
 import org.fossify.messages.helpers.CAPTURE_AUDIO_INTENT
 import org.fossify.messages.helpers.CAPTURE_PHOTO_INTENT
 import org.fossify.messages.helpers.CAPTURE_VIDEO_INTENT
@@ -229,6 +232,9 @@ class ThreadActivity : SimpleActivity() {
     private lateinit var scheduledDateTime: DateTime
 
     private var isAttachmentPickerVisible = false
+
+    // show only the messages that are spam, marked "not spam", or contain a spam keyword
+    private var showOnlySuspicious = false
 
     private val binding by viewBinding(ActivityThreadBinding::inflate)
 
@@ -377,6 +383,12 @@ class ThreadActivity : SimpleActivity() {
                 participants.size == 1 && participants.first().name == firstPhoneNumber && !isRecycleBin
             findItem(R.id.copy_number).isVisible =
                 participants.size == 1 && !firstPhoneNumber.isNullOrEmpty() && !isRecycleBin
+            findItem(R.id.show_only_suspicious).isVisible = !isRecycleBin
+            findItem(R.id.exempt_from_spam).apply {
+                isVisible = participants.size == 1 && !firstPhoneNumber.isNullOrEmpty() && !isRecycleBin
+                val isExempt = firstPhoneNumber in config.spamExemptNumbers
+                setTitle(if (isExempt) R.string.unexempt_from_spam else R.string.exempt_from_spam)
+            }
         }
     }
 
@@ -401,7 +413,7 @@ class ThreadActivity : SimpleActivity() {
             R.id.dial_number -> dialNumber()
             R.id.manage_people -> managePeople()
             R.id.mark_as_unread -> markAsUnread()
-            else -> return false
+            else -> return handleSpamMenuItem(menuItem.itemId)
         }
 
         return true
@@ -606,11 +618,16 @@ class ThreadActivity : SimpleActivity() {
 
     private fun setupAdapter() {
         val latestThreadItems = getThreadItems()
+        val spamMarks = getThreadSpamMarks()
+        val (notSpamMarks, latestSpamMarks) = spamMarks.partition { it.kind == SpamMessage.KIND_NOT_SPAM }
+        val latestSpamKeys = latestSpamMarks.map { it.id to it.isMMS }.toSet()
+        val latestNotSpamKeys = notSpamMarks.map { it.id to it.isMMS }.toSet()
 
         runOnUiThread {
             threadItems = latestThreadItems
             refreshMenuItems()
             getOrCreateThreadAdapter().apply {
+                setSpamKeys(latestSpamKeys, latestNotSpamKeys)
                 val layoutManager = binding.threadMessagesList.layoutManager as LinearLayoutManager
                 val lastPosition = itemCount - 1
                 val lastVisiblePosition = layoutManager.findLastVisibleItemPosition()
@@ -1336,7 +1353,7 @@ class ThreadActivity : SimpleActivity() {
             return emptyList()
         }
 
-        val messageSnapshot = messages.toSortedMessages()
+        val messageSnapshot = getShownMessages()
         val items = ArrayList<ThreadItem>()
 
         val subscriptionIdToSimId = HashMap<Int, String>()
@@ -1390,6 +1407,57 @@ class ThreadActivity : SimpleActivity() {
         }
 
         return items
+    }
+
+    private fun getThreadSpamMarks() = try {
+        messagesDB.getThreadSpamMarks(threadId)
+    } catch (_: Exception) {
+        emptyList()
+    }
+
+    private fun getShownMessages(): List<Message> {
+        val sorted = messages.toSortedMessages()
+        return if (showOnlySuspicious) filterSuspicious(sorted) else sorted
+    }
+
+    private fun filterSuspicious(messages: List<Message>): List<Message> {
+        val marked = getThreadSpamMarks().map { it.id to it.isMMS }.toSet()
+        val matcher = SpamMatcher(this)
+        return messages.filter { (it.id to it.isMMS) in marked || matcher.keywordMatches(it.body).isNotEmpty() }
+    }
+
+    private fun handleSpamMenuItem(itemId: Int): Boolean {
+        when (itemId) {
+            R.id.show_only_suspicious -> {
+                showOnlySuspicious = !showOnlySuspicious
+                binding.threadToolbar.menu.findItem(R.id.show_only_suspicious).isChecked = showOnlySuspicious
+                if (showOnlySuspicious) {
+                    toast(R.string.showing_only_suspicious)
+                }
+                ensureBackgroundThread { setupAdapter() }
+            }
+
+            R.id.exempt_from_spam -> toggleSpamExempt()
+            else -> return false
+        }
+        return true
+    }
+
+    // Messages from an exempt number are never spam; re-check the messages so the change shows right away.
+    private fun toggleSpamExempt() {
+        val number = participants.firstOrNull()?.phoneNumbers?.firstOrNull()?.value ?: return
+        val existing = config.spamExemptNumbers.firstOrNull { it == number }
+        if (existing != null) {
+            config.removeSpamExemptNumber(existing)
+        } else {
+            config.addSpamExemptNumber(number)
+        }
+        refreshMenuItems()
+        ensureBackgroundThread {
+            val (marked, unmarked) = applySpamRulesToExistingMessages()
+            toast(getString(R.string.existing_messages_checked, marked, unmarked))
+            refreshMessages()
+        }
     }
 
     private fun launchActivityForResult(

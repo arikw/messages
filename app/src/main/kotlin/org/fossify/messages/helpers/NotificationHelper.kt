@@ -52,6 +52,10 @@ class NotificationHelper(private val context: Context) {
             if (hasCustomNotifications) threadId.toString() else NOTIFICATION_CHANNEL_ID
         if (!hasCustomNotifications) {
             createChannel(notificationChannelId, context.getString(R.string.channel_received_sms))
+        } else if (notificationManager.getNotificationChannel(notificationChannelId) == null) {
+            // The settings can list a conversation whose channel doesn't exist here (e.g. settings copied from the
+            // original app); posting to a missing channel would drop the notification without a trace.
+            createChannel(notificationChannelId, sender ?: address)
         }
 
         val notificationId = threadId.hashCode()

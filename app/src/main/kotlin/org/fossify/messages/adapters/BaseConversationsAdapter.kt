@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.graphics.Typeface
 import android.os.Parcelable
 import android.util.TypedValue
+import android.view.Menu
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
@@ -22,10 +23,15 @@ import org.fossify.commons.helpers.FontHelper
 import org.fossify.commons.helpers.SimpleContactsHelper
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.views.MyRecyclerView
+import org.fossify.commons.extensions.toast
+import org.fossify.messages.R
 import org.fossify.messages.activities.SimpleActivity
+import org.fossify.messages.helpers.applySpamRulesToExistingMessages
+import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.databinding.ItemConversationBinding
 import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.getAllDrafts
+import org.fossify.messages.extensions.messagesDB
 import org.fossify.messages.models.Conversation
 
 @Suppress("LeakingThis")
@@ -44,6 +50,7 @@ abstract class BaseConversationsAdapter(
     RecyclerViewFastScroller.OnPopupTextUpdate {
     private var fontSize = activity.getTextSize()
     private var drafts = HashMap<Long, String>()
+    private var spamThreadIds = emptySet<Long>()
 
     private var recyclerViewState: Parcelable? = null
 
@@ -51,6 +58,7 @@ abstract class BaseConversationsAdapter(
         setupDragListener(true)
         setHasStableIds(true)
         updateDrafts()
+        updateSpamThreads()
 
         registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
             override fun onChanged() = restoreRecyclerViewState()
@@ -74,6 +82,25 @@ abstract class BaseConversationsAdapter(
     ) {
         saveRecyclerViewState()
         submitList(newConversations.toList(), commitCallback)
+        updateSpamThreads()
+    }
+
+    // Conversations whose latest message is spam get a "Spam" tag in the list.
+    @SuppressLint("NotifyDataSetChanged")
+    private fun updateSpamThreads() {
+        ensureBackgroundThread {
+            val newSpamThreadIds = try {
+                activity.messagesDB.getThreadIdsEndingWithSpam().toSet()
+            } catch (_: Exception) {
+                emptySet()
+            }
+            activity.runOnUiThread {
+                if (spamThreadIds != newSpamThreadIds) {
+                    spamThreadIds = newSpamThreadIds
+                    notifyDataSetChanged()
+                }
+            }
+        }
     }
 
     @SuppressLint("NotifyDataSetChanged")
@@ -87,6 +114,57 @@ abstract class BaseConversationsAdapter(
                     notifyDataSetChanged()
                 }
             }
+        }
+    }
+
+    // "Mark sender as spam" and "Never spam from this number", for one selected conversation with one other person
+    protected fun prepareSpamExemptItem(menu: Menu) {
+        val conversation = getSelectedItems().singleOrNull()
+        val isVisible =
+            conversation != null && !conversation.isGroupConversation && conversation.phoneNumber.isNotEmpty()
+        val exemptItem = menu.findItem(R.id.cab_exempt_from_spam)
+        val spamItem = menu.findItem(R.id.cab_spam_number)
+        exemptItem?.isVisible = isVisible
+        spamItem?.isVisible = isVisible
+        if (conversation != null) {
+            val isExempt = conversation.phoneNumber in activity.config.spamExemptNumbers
+            exemptItem?.setTitle(if (isExempt) R.string.unexempt_from_spam else R.string.exempt_from_spam)
+            val isSpamNumber = conversation.phoneNumber in activity.config.spamNumbers
+            spamItem?.setTitle(if (isSpamNumber) R.string.unmark_sender_as_spam else R.string.mark_sender_as_spam)
+        }
+    }
+
+    // Adds the sender to the spam numbers (and takes it off the exempt ones), or takes it off the spam numbers.
+    protected fun toggleSpamNumber() {
+        val number = getSelectedItems().singleOrNull()?.phoneNumber ?: return
+        if (number in activity.config.spamNumbers) {
+            activity.config.removeSpamNumber(number)
+        } else {
+            activity.config.addSpamNumber(number)
+            activity.config.removeSpamExemptNumber(number)
+        }
+        finishActMode()
+        recheckSpam()
+    }
+
+    protected fun toggleSpamExempt() {
+        val number = getSelectedItems().singleOrNull()?.phoneNumber ?: return
+        if (number in activity.config.spamExemptNumbers) {
+            activity.config.removeSpamExemptNumber(number)
+        } else {
+            activity.config.addSpamExemptNumber(number)
+            activity.config.removeSpamNumber(number)
+        }
+        finishActMode()
+        recheckSpam()
+    }
+
+    // Applies the spam lists to the messages again, so a change shows right away.
+    protected fun recheckSpam() {
+        ensureBackgroundThread {
+            val (marked, unmarked) = activity.applySpamRulesToExistingMessages()
+            activity.toast(activity.getString(R.string.existing_messages_checked, marked, unmarked))
+            refreshConversations()
         }
     }
 
@@ -146,6 +224,7 @@ abstract class BaseConversationsAdapter(
             val smsDraft = drafts[conversation.threadId]
             draftIndicator.beVisibleIf(!smsDraft.isNullOrEmpty())
             draftIndicator.setTextColor(properPrimaryColor)
+            spamIndicator.beVisibleIf(conversation.threadId in spamThreadIds)
 
             pinIndicator.beVisibleIf(
                 activity.config.pinnedConversations.contains(conversation.threadId.toString())

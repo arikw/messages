@@ -34,7 +34,7 @@
         android:allowBackup="true"
         android:appCategory="productivity"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_launcher_name"
+        android:label="@string/fork_launcher_name"
         android:roundIcon="@mipmap/ic_launcher"
         android:theme="@style/AppTheme">
 
@@ -60,6 +60,13 @@
             android:configChanges="orientation"
             android:exported="true"
             android:label="@string/archived_conversations"
+            android:parentActivityName=".activities.MainActivity" />
+
+        <activity
+            android:name=".activities.SpamConversationsActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:label="@string/spam"
             android:parentActivityName=".activities.MainActivity" />
 
         <activity
@@ -118,6 +125,13 @@
         </activity>
 
         <activity
+            android:name=".activities.ForkAboutActivity"
+            android:configChanges="orientation"
+            android:exported="false"
+            android:label="@string/about"
+            android:parentActivityName=".activities.MainActivity" />
+
+        <activity
             android:name="org.fossify.commons.activities.AboutActivity"
             android:configChanges="orientation"
             android:exported="false"
@@ -143,7 +157,7 @@
             android:name=".activities.ManageBlockedKeywordsActivity"
             android:configChanges="orientation"
             android:exported="false"
-            android:label="@string/blocked_keywords"
+            android:label="@string/spam_keywords"
             android:parentActivityName=".activities.SettingsActivity" />
 
         <activity

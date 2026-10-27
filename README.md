@@ -1,3 +1,42 @@
+# Messages+
+
+A fork of [Fossify Messages](https://github.com/FossifyOrg/Messages) that keeps spam instead of throwing it away.
+Package `net.wzmn.messages`, so it installs next to the original. Not affiliated with Fossify.
+
+## What's different
+
+- **Spam is kept, not deleted.** Messages that match a spam keyword or come from a number on the app's own
+  "Spam numbers" list are saved silently (no notification) and shown in a Spam folder. Upstream drops them for good.
+- The words that made a message spam are highlighted, conversations whose latest message is spam get a tag, and a
+  conversation can be filtered to its suspicious messages.
+- "Mark as spam" / "Not spam" per message, "Mark sender as spam", and a list of numbers that are never spam.
+- A spam keyword can be picked straight from a message, with a live preview of the received messages it would match.
+  "Whole word only" per keyword.
+- "Update spam marks" re-applies the lists to the messages already on the phone, leaving your own marks alone.
+- Spam settings in their own Settings section, and in the Spam folder's menu.
+
+## Install
+
+Download the APK from [Releases](../../releases), or add this repository's URL to
+[Obtainium](https://github.com/ImranR98/Obtainium) to get updates.
+
+## Build
+
+In a container, with [podman](https://podman.io):
+
+```sh
+podman build -t localhost/fossify-messages-build tools   # once
+tools/build.sh                                            # app/build/outputs/apk/foss/release/
+```
+
+A signed release build needs a `keystore.properties` (see `keystore.properties_sample`) and its key.
+
+## License
+
+GPL-3.0, like the original. Based on Fossify Messages by the Fossify contributors; the original's README follows.
+
+---
+
 # Fossify Messages
 <img alt="Logo" src="graphics/icon.webp" width="120" />
 

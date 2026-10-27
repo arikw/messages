@@ -56,6 +56,7 @@ class ConversationsAdapter(
             findItem(R.id.cab_mark_as_read).isVisible = selectedItems.any { !it.read }
             findItem(R.id.cab_mark_as_unread).isVisible = selectedItems.any { it.read }
             findItem(R.id.cab_archive).isVisible = archiveAvailable
+            prepareSpamExemptItem(this)
             checkPinBtnVisibility(this)
         }
     }
@@ -82,6 +83,8 @@ class ConversationsAdapter(
             R.id.cab_pin_conversation -> pinConversation(true)
             R.id.cab_unpin_conversation -> pinConversation(false)
             R.id.cab_select_all -> selectAll()
+            R.id.cab_exempt_from_spam -> toggleSpamExempt()
+            R.id.cab_spam_number -> toggleSpamNumber()
         }
     }
 

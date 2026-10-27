@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The Spam screen's menu (net.wzmn.messages fork): the spam settings, one tap away. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item
+        android:id="@+id/manage_spam_keywords"
+        android:title="@string/spam_keywords"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/manage_spam_numbers"
+        android:title="@string/spam_numbers"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/manage_spam_exempt_numbers"
+        android:title="@string/spam_exempt_numbers"
+        app:showAsAction="never" />
+    <item
+        android:id="@+id/check_existing_messages"
+        android:title="@string/check_existing_messages"
+        app:showAsAction="never" />
+</menu>

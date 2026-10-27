@@ -44,3 +44,6 @@
 -keepclassmembers,allowobfuscation class ezvcard.parameter.* extends ezvcard.parameter.MediaTypeParameter {
     <init>(java.lang.String, java.lang.String, java.lang.String);
 }
+
+# net.wzmn.messages: SimpleActivity.getPackageName recognises this exact caller, so keep it as it is.
+-keep class org.fossify.commons.activities.BaseSimpleActivity { void onCreate(android.os.Bundle); }

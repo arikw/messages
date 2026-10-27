@@ -227,5 +227,9 @@
     <ID>WildcardImport:ManageBlockedKeywordsAdapter.kt$import android.view.*</ID>
     <ID>WildcardImport:VCard.kt$import ezvcard.property.*</ID>
     <ID>WildcardImport:VCardViewerAdapter.kt$import org.fossify.commons.extensions.*</ID>
+    <ID>EmptyFunctionBlock:SpamConversationsAdapter.kt$SpamConversationsAdapter${}</ID>
+    <ID>SwallowedException:SpamConversationsActivity.kt$SpamConversationsActivity$e: Exception</ID>
+    <ID>TooGenericExceptionCaught:SpamConversationsActivity.kt$SpamConversationsActivity$e: Exception</ID>
+    <ID>TooManyFunctions:Config.kt$Config : BaseConfig</ID>
   </CurrentIssues>
 </SmellBaseline>

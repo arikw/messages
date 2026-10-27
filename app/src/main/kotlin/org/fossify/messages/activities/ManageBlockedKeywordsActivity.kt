@@ -26,6 +26,9 @@ import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.toArrayList
 import org.fossify.messages.helpers.BlockedKeywordsExporter
 import org.fossify.messages.helpers.BlockedKeywordsImporter
+import org.fossify.messages.helpers.IS_SPAM_EXEMPT_NUMBERS
+import org.fossify.messages.helpers.IS_SPAM_NUMBERS
+import org.fossify.messages.helpers.applySpamRulesToExistingMessages
 import java.io.FileOutputStream
 import java.io.OutputStream
 
@@ -33,11 +36,21 @@ class ManageBlockedKeywordsActivity : SimpleActivity(), RefreshRecyclerViewListe
 
     private val binding by viewBinding(ActivityManageBlockedKeywordsBinding::inflate)
 
+    // The same screen manages the spam numbers and the exempt numbers lists; only keywords can be imported and
+    // exported.
+    private val isSpamNumbers by lazy { intent.getBooleanExtra(IS_SPAM_NUMBERS, false) }
+    private val isExemptNumbers by lazy { intent.getBooleanExtra(IS_SPAM_EXEMPT_NUMBERS, false) }
+    private val isNumbers get() = isSpamNumbers || isExemptNumbers
+
+    private fun listText(keywords: Int, spamNumbers: Int, exemptNumbers: Int) =
+        getString(if (isExemptNumbers) exemptNumbers else if (isSpamNumbers) spamNumbers else keywords)
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
         updateBlockedKeywords()
         setupOptionsMenu()
+        setupTexts()
 
         setupEdgeToEdge(padBottomImeAndSystem = listOf(binding.manageBlockedKeywordsList))
         setupMaterialScrollListener(
@@ -60,6 +73,21 @@ class ManageBlockedKeywordsActivity : SimpleActivity(), RefreshRecyclerViewListe
         setupTopAppBar(binding.blockKeywordsAppbar, NavigationIcon.Arrow)
     }
 
+    private fun setupTexts() {
+        binding.blockKeywordsToolbar.title =
+            listText(R.string.spam_keywords, R.string.spam_numbers, R.string.spam_exempt_numbers)
+        binding.manageBlockedKeywordsPlaceholder.text =
+            listText(R.string.no_spam_keywords, R.string.no_spam_numbers, R.string.no_spam_exempt_numbers)
+        binding.manageBlockedKeywordsPlaceholder2.text =
+            listText(R.string.add_spam_keyword, R.string.add_spam_number, R.string.add_spam_exempt_number)
+        binding.blockKeywordsToolbar.menu.apply {
+            findItem(R.id.add_blocked_keyword).title =
+                listText(R.string.add_spam_keyword, R.string.add_spam_number, R.string.add_spam_exempt_number)
+            findItem(R.id.import_blocked_keywords).isVisible = !isNumbers
+            findItem(R.id.export_blocked_keywords).isVisible = !isNumbers
+        }
+    }
+
     private fun setupOptionsMenu() {
         binding.blockKeywordsToolbar.setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
@@ -70,6 +98,11 @@ class ManageBlockedKeywordsActivity : SimpleActivity(), RefreshRecyclerViewListe
 
                 R.id.export_blocked_keywords -> {
                     tryExportBlockedNumbers()
+                    true
+                }
+
+                R.id.check_existing_messages -> {
+                    checkExistingMessages()
                     true
                 }
 
@@ -191,19 +224,43 @@ class ManageBlockedKeywordsActivity : SimpleActivity(), RefreshRecyclerViewListe
         }
     }
 
+    private fun checkExistingMessages() {
+        toast(R.string.checking_existing_messages)
+        ensureBackgroundThread {
+            val (marked, unmarked) = applySpamRulesToExistingMessages()
+            toast(getString(R.string.existing_messages_checked, marked, unmarked), Toast.LENGTH_LONG)
+        }
+    }
+
     override fun refreshItems() {
         updateBlockedKeywords()
     }
 
     private fun updateBlockedKeywords() {
         ensureBackgroundThread {
-            val blockedKeywords = config.blockedKeywords.sorted().toArrayList()
+            val blockedKeywords =
+                when {
+                    isExemptNumbers -> config.spamExemptNumbers
+                    isSpamNumbers -> config.spamNumbers
+                    else -> config.blockedKeywords
+                }.sorted().toArrayList()
+            val wholeWords = config.wholeWordKeywords
             runOnUiThread {
                 ManageBlockedKeywordsAdapter(
                     activity = this,
                     blockedKeywords = blockedKeywords,
                     listener = this,
-                    recyclerView = binding.manageBlockedKeywordsList
+                    recyclerView = binding.manageBlockedKeywordsList,
+                    removeItem = {
+                        when {
+                            isExemptNumbers -> config.removeSpamExemptNumber(it)
+                            isSpamNumbers -> config.removeSpamNumber(it)
+                            else -> config.removeBlockedKeyword(it)
+                        }
+                    },
+                    itemLabel = {
+                        if (!isNumbers && it in wholeWords) getString(R.string.keyword_whole_word, it) else it
+                    }
                 ) {
                     addOrEditBlockedKeyword(it as String)
                 }.apply {
@@ -217,7 +274,7 @@ class ManageBlockedKeywordsActivity : SimpleActivity(), RefreshRecyclerViewListe
     }
 
     private fun addOrEditBlockedKeyword(keyword: String? = null) {
-        AddBlockedKeywordDialog(this, keyword) {
+        AddBlockedKeywordDialog(this, keyword, isSpamNumbers, isExemptNumbers) {
             updateBlockedKeywords()
         }
     }

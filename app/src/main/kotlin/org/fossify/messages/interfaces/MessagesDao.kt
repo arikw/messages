@@ -8,6 +8,7 @@ import androidx.room.Query
 import androidx.room.Transaction
 import org.fossify.messages.models.Message
 import org.fossify.messages.models.RecycleBinMessage
+import org.fossify.messages.models.SpamMessage
 
 @Dao
 interface MessagesDao {
@@ -84,6 +85,7 @@ interface MessagesDao {
     fun deleteThreadMessages(threadId: Long) {
         deleteThreadMessagesFromRecycleBin(threadId)
         deleteAllThreadMessages(threadId)
+        deleteThreadSpam(threadId)
     }
 
     @Query("DELETE FROM messages WHERE thread_id = :threadId")
@@ -94,4 +96,33 @@ interface MessagesDao {
 
     @Query("DELETE FROM messages")
     fun deleteAll()
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertSpam(vararg spamMessage: SpamMessage)
+
+    @Query("DELETE FROM spam_messages WHERE id = :id AND is_mms = :isMMS")
+    fun deleteSpam(id: Long, isMMS: Boolean)
+
+    @Query("DELETE FROM spam_messages WHERE thread_id = :threadId")
+    fun deleteThreadSpam(threadId: Long)
+
+    @Query("SELECT * FROM spam_messages WHERE thread_id = :threadId AND kind != 2")
+    fun getThreadSpam(threadId: Long): List<SpamMessage>
+
+    @Query("SELECT * FROM spam_messages")
+    fun getAllSpamMarks(): List<SpamMessage>
+
+    // all kinds, "not spam" included
+    @Query("SELECT * FROM spam_messages WHERE thread_id = :threadId")
+    fun getThreadSpamMarks(threadId: Long): List<SpamMessage>
+
+    // conversations whose latest (cached) message is spam
+    @Query("SELECT DISTINCT spam_messages.thread_id FROM spam_messages JOIN messages ON messages.id = spam_messages.id AND messages.is_mms = spam_messages.is_mms WHERE spam_messages.kind != 2 AND messages.date = (SELECT MAX(latest.date) FROM messages latest WHERE latest.thread_id = spam_messages.thread_id)")
+    fun getThreadIdsEndingWithSpam(): List<Long>
+
+    @Query("UPDATE spam_messages SET kind = 2 WHERE thread_id = :threadId")
+    fun markThreadNotSpam(threadId: Long)
+
+    @Query("SELECT COUNT(*) FROM messages LEFT OUTER JOIN spam_messages ON messages.id = spam_messages.id AND messages.is_mms = spam_messages.is_mms AND spam_messages.kind != 2 WHERE messages.thread_id = :threadId AND spam_messages.id IS NULL")
+    fun getThreadNonSpamCount(threadId: Long): Int
 }

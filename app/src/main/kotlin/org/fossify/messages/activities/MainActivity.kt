@@ -36,6 +36,8 @@ import org.fossify.commons.extensions.toast
 import org.fossify.commons.extensions.underlineText
 import org.fossify.commons.extensions.updateTextColors
 import org.fossify.commons.extensions.viewBinding
+import org.fossify.commons.helpers.APP_FAQ
+import org.fossify.commons.helpers.APP_LICENSES
 import org.fossify.commons.helpers.LICENSE_EVENT_BUS
 import org.fossify.commons.helpers.LICENSE_INDICATOR_FAST_SCROLL
 import org.fossify.commons.helpers.LICENSE_SMS_MMS
@@ -177,6 +179,7 @@ class MainActivity : SimpleActivity() {
 
         binding.mainMenu.requireToolbar().setOnMenuItemClickListener { menuItem ->
             when (menuItem.itemId) {
+                R.id.show_spam -> launchSpamConversations()
                 R.id.show_recycle_bin -> launchRecycleBin()
                 R.id.show_archived -> launchArchivedConversations()
                 R.id.settings -> launchSettings()
@@ -621,6 +624,11 @@ class MainActivity : SimpleActivity() {
         startActivity(Intent(applicationContext, ArchivedConversationsActivity::class.java))
     }
 
+    private fun launchSpamConversations() {
+        hideKeyboard()
+        startActivity(Intent(applicationContext, SpamConversationsActivity::class.java))
+    }
+
     private fun launchSettings() {
         hideKeyboard()
         startActivity(Intent(applicationContext, SettingsActivity::class.java))
@@ -663,13 +671,13 @@ class MainActivity : SimpleActivity() {
             )
         }
 
-        startAboutActivity(
-            appNameId = R.string.app_name,
-            licenseMask = licenses,
-            versionName = BuildConfig.VERSION_NAME,
-            faqItems = faqItems,
-            showFAQBeforeMail = true
-        )
+        // net.wzmn.messages: own About screen, without Fossify's links, donations and support email
+        hideKeyboard()
+        Intent(applicationContext, ForkAboutActivity::class.java).apply {
+            putExtra(APP_LICENSES, licenses)
+            putExtra(APP_FAQ, faqItems)
+            startActivity(this)
+        }
     }
 
     @Subscribe(threadMode = ThreadMode.MAIN)

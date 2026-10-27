@@ -35,6 +35,8 @@ import org.fossify.messages.dialogs.ExportMessagesDialog
 import org.fossify.messages.extensions.config
 import org.fossify.messages.extensions.emptyMessagesRecycleBin
 import org.fossify.messages.extensions.messagesDB
+import org.fossify.messages.helpers.IS_SPAM_EXEMPT_NUMBERS
+import org.fossify.messages.helpers.IS_SPAM_NUMBERS
 import org.fossify.messages.helpers.FILE_SIZE_100_KB
 import org.fossify.messages.helpers.FILE_SIZE_1_MB
 import org.fossify.messages.helpers.FILE_SIZE_200_KB
@@ -130,6 +132,7 @@ class SettingsActivity : SimpleActivity() {
         arrayOf(
             binding.settingsColorCustomizationSectionLabel,
             binding.settingsGeneralSettingsLabel,
+            binding.settingsSpamLabel,
             binding.settingsOutgoingMessagesLabel,
             binding.settingsNotificationsLabel,
             binding.settingsArchivedMessagesLabel,
@@ -210,10 +213,24 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupManageBlockedKeywords() = binding.apply {
         settingsManageBlockedKeywords.text =
-            getString(R.string.manage_blocked_keywords)
+            getString(R.string.spam_keywords)
 
         settingsManageBlockedKeywordsHolder.setOnClickListener {
             Intent(this@SettingsActivity, ManageBlockedKeywordsActivity::class.java).apply {
+                startActivity(this)
+            }
+        }
+
+        settingsManageSpamNumbersHolder.setOnClickListener {
+            Intent(this@SettingsActivity, ManageBlockedKeywordsActivity::class.java).apply {
+                putExtra(IS_SPAM_NUMBERS, true)
+                startActivity(this)
+            }
+        }
+
+        settingsManageSpamExemptNumbersHolder.setOnClickListener {
+            Intent(this@SettingsActivity, ManageBlockedKeywordsActivity::class.java).apply {
+                putExtra(IS_SPAM_EXEMPT_NUMBERS, true)
                 startActivity(this)
             }
         }

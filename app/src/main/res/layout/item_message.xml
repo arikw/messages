@@ -30,10 +30,26 @@
             tools:ignore="ContentDescription"
             tools:visibility="visible" />
 
+        <org.fossify.commons.views.MyTextView
+            android:id="@+id/thread_message_spam_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_toEndOf="@id/thread_message_sender_photo"
+            android:layout_marginStart="@dimen/normal_margin"
+            android:layout_marginBottom="@dimen/tiny_margin"
+            android:paddingHorizontal="@dimen/small_margin"
+            android:text="@string/spam_tag"
+            android:textColor="@android:color/white"
+            android:textSize="@dimen/smaller_text_size"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:visibility="visible" />
+
         <LinearLayout
             android:id="@+id/thread_message_attachments_holder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_below="@id/thread_message_spam_label"
             android:layout_toEndOf="@id/thread_message_sender_photo"
             android:divider="@drawable/linear_layout_vertical_divider"
             android:orientation="vertical"

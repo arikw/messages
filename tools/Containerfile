@@ -1,0 +1,18 @@
+# Build image for this app: JDK 17 and Android SDK 36. Create it once with
+#   podman build -t localhost/fossify-messages-build tools
+# Debian/Ubuntu based, not Alpine: the Android SDK binaries are built for glibc and don't run on musl.
+FROM docker.io/library/eclipse-temurin:17-jdk-noble
+
+RUN apt-get update && apt-get install -y --no-install-recommends unzip git ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV ANDROID_HOME=/opt/android-sdk
+ENV PATH=$PATH:/opt/android-sdk/cmdline-tools/latest/bin
+RUN mkdir -p $ANDROID_HOME/cmdline-tools \
+    && curl -sSL -o /tmp/clt.zip https://dl.google.com/android/repository/commandlinetools-linux-13114758_latest.zip \
+    && unzip -q /tmp/clt.zip -d /tmp/clt && mv /tmp/clt/cmdline-tools $ANDROID_HOME/cmdline-tools/latest \
+    && rm -rf /tmp/clt /tmp/clt.zip \
+    && yes | sdkmanager --licenses >/dev/null \
+    && sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools" >/dev/null
+
+WORKDIR /app

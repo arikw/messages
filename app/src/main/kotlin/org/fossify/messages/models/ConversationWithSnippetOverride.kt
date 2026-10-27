@@ -5,12 +5,12 @@ import androidx.room.Embedded
 
 data class ConversationWithSnippetOverride(
     @ColumnInfo(name = "new_snippet") val snippet: String?,
-    @Embedded val conversation: Conversation
+    @Embedded val conversation: Conversation,
+    @ColumnInfo(name = "new_date") val date: Int? = null
 ) {
     fun toConversation() =
-        if (snippet == null) {
-            conversation
-        } else {
-            conversation.copy(snippet = snippet)
-        }
+        conversation.copy(
+            snippet = snippet ?: conversation.snippet,
+            date = date ?: conversation.date
+        )
 }

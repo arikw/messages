@@ -16,7 +16,10 @@ import org.fossify.messages.extensions.config
 
 class ManageBlockedKeywordsAdapter(
     activity: BaseSimpleActivity, var blockedKeywords: ArrayList<String>, val listener: RefreshRecyclerViewListener?,
-    recyclerView: MyRecyclerView, itemClick: (Any) -> Unit
+    recyclerView: MyRecyclerView,
+    private val removeItem: (String) -> Unit = { activity.config.removeBlockedKeyword(it) },
+    private val itemLabel: (String) -> String = { it },
+    itemClick: (Any) -> Unit
 ) : MyRecyclerViewAdapter(activity, recyclerView, itemClick) {
     init {
         setupDragListener(true)
@@ -75,7 +78,7 @@ class ManageBlockedKeywordsAdapter(
             root.setupViewBackground(activity)
             manageBlockedKeywordHolder.isSelected = selectedKeys.contains(blockedKeyword.hashCode())
             manageBlockedKeywordTitle.apply {
-                text = blockedKeyword
+                text = itemLabel(blockedKeyword)
                 setTextColor(textColor)
             }
 
@@ -136,7 +139,7 @@ class ManageBlockedKeywordsAdapter(
 
         getSelectedItems().forEach {
             deleteBlockedKeywords.add(it)
-            activity.config.removeBlockedKeyword(it)
+            removeItem(it)
         }
 
         blockedKeywords.removeAll(deleteBlockedKeywords)

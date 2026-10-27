@@ -7,6 +7,10 @@
         android:title="@string/add_a_blocked_keyword"
         app:showAsAction="ifRoom" />
     <item
+        android:id="@+id/check_existing_messages"
+        android:title="@string/check_existing_messages"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/import_blocked_keywords"
         android:title="@string/import_blocked_keywords"
         app:showAsAction="never" />

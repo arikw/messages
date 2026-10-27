@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The red "Spam" tag on a conversation in the list (net.wzmn.messages fork). The empty strip at its end is the gap
+     before the message preview: a margin on the tag doesn't move the preview in that ConstraintLayout. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:end="@dimen/spam_tag_gap">
+        <shape android:shape="rectangle">
+            <solid android:color="#E53935" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+</layer-list>

@@ -13,6 +13,7 @@ import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.models.PhoneNumber
 import org.fossify.commons.models.SimpleContact
 import org.fossify.messages.extensions.getConversations
+import org.fossify.messages.extensions.getMessages
 import org.fossify.messages.extensions.getNameFromAddress
 import org.fossify.messages.extensions.getNotificationBitmap
 import org.fossify.messages.extensions.getThreadId
@@ -22,10 +23,11 @@ import org.fossify.messages.extensions.messagesDB
 import org.fossify.messages.extensions.shouldUnarchive
 import org.fossify.messages.extensions.showReceivedMessageNotification
 import org.fossify.messages.extensions.updateConversationArchivedStatus
-import org.fossify.messages.helpers.ReceiverUtils.isMessageFilteredOut
+import org.fossify.messages.helpers.ReceiverUtils.isSpam
 import org.fossify.messages.helpers.refreshConversations
 import org.fossify.messages.helpers.refreshMessages
 import org.fossify.messages.models.Message
+import org.fossify.messages.models.SpamMessage
 
 class SmsReceiver : BroadcastReceiver() {
 
@@ -45,7 +47,6 @@ class SmsReceiver : BroadcastReceiver() {
                 val status = parts.last().status
                 val body = buildString { parts.forEach { append(it.messageBody.orEmpty()) } }
 
-                if (isMessageFilteredOut(appContext, body)) return@ensureBackgroundThread
                 if (appContext.isNumberBlocked(address)) return@ensureBackgroundThread
                 if (appContext.baseConfig.blockUnknownNumbers) {
                     val privateCursor =
@@ -54,6 +55,8 @@ class SmsReceiver : BroadcastReceiver() {
                     if (result == ContactLookupResult.NotFound) return@ensureBackgroundThread
                 }
 
+                // Spam is kept (and readable in the Spam folder) instead of being dropped, just silently.
+                val isSpam = isSpam(appContext, address, body)
                 val date = System.currentTimeMillis()
                 val threadId = appContext.getThreadId(address)
                 val subscriptionId = intent.getIntExtra("subscription", -1)
@@ -64,9 +67,11 @@ class SmsReceiver : BroadcastReceiver() {
                     subject = subject,
                     body = body,
                     date = date,
+                    read = if (isSpam) 1 else 0,
                     threadId = threadId,
                     subscriptionId = subscriptionId,
-                    status = status
+                    status = status,
+                    isSpam = isSpam
                 )
             } finally {
                 pending.finish()
@@ -74,6 +79,7 @@ class SmsReceiver : BroadcastReceiver() {
         }
     }
 
+    @Suppress("SpreadOperator")
     private fun handleMessageSync(
         context: Context,
         address: String,
@@ -84,7 +90,8 @@ class SmsReceiver : BroadcastReceiver() {
         threadId: Long,
         type: Int = Telephony.Sms.MESSAGE_TYPE_INBOX,
         subscriptionId: Int,
-        status: Int
+        status: Int,
+        isSpam: Boolean = false
     ) {
         val photoUri = SimpleContactsHelper(context).getPhotoUriFromPhoneNumber(address)
         val bitmap = context.getNotificationBitmap(photoUri)
@@ -125,7 +132,7 @@ class SmsReceiver : BroadcastReceiver() {
             status = status,
             participants = arrayListOf(participant),
             date = (date / 1000).toInt(),
-            read = false,
+            read = isSpam,
             threadId = threadId,
             isMMS = false,
             attachment = null,
@@ -134,6 +141,21 @@ class SmsReceiver : BroadcastReceiver() {
             senderPhotoUri = photoUri,
             subscriptionId = subscriptionId
         )
+
+        if (isSpam) {
+            // Whether the conversation counts as spam-only is decided from the locally cached messages, so make
+            // sure its earlier messages are cached before the first spam message is.
+            if (context.messagesDB.getThreadNonSpamCount(threadId) == 0) {
+                val earlier = context.getMessages(threadId, includeScheduledMessages = false)
+                    .filterNot { it.id == newMessageId && !it.isMMS }
+                context.messagesDB.insertMessages(*earlier.toTypedArray())
+            }
+            context.messagesDB.insertSpam(SpamMessage(newMessageId, isMMS = false, threadId = threadId))
+            context.messagesDB.insertOrUpdate(message)
+            refreshMessages()
+            refreshConversations()
+            return
+        }
 
         context.messagesDB.insertOrUpdate(message)
 

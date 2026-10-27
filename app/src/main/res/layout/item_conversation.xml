@@ -40,6 +40,24 @@
         tools:text="John" />
 
     <org.fossify.commons.views.MyTextView
+        android:id="@+id/spam_indicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:background="@drawable/spam_indicator_background"
+        android:maxLines="1"
+        android:paddingStart="@dimen/small_margin"
+        android:paddingEnd="@dimen/spam_tag_padding_end"
+        android:text="@string/spam"
+        android:textColor="@android:color/white"
+        android:textSize="@dimen/list_tertiary_text_size"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/conversation_body_short"
+        app:layout_constraintStart_toStartOf="@id/conversation_address"
+        app:layout_constraintTop_toTopOf="@id/conversation_body_short"
+        tools:visibility="visible" />
+
+    <org.fossify.commons.views.MyTextView
         android:id="@+id/draft_indicator"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -54,7 +72,7 @@
         android:textStyle="italic"
         app:layout_constraintBottom_toBottomOf="@id/conversation_body_short"
         app:layout_constraintEnd_toStartOf="@id/conversation_body_short"
-        app:layout_constraintStart_toStartOf="@id/conversation_address"
+        app:layout_constraintStart_toEndOf="@id/spam_indicator"
         app:layout_constraintTop_toTopOf="@id/conversation_body_short" />
 
     <org.fossify.commons.views.MyTextView

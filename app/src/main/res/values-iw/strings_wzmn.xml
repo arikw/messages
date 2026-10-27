@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Strings added by the net.wzmn.messages fork, kept apart from the upstream files. -->
+<resources>
+    <string name="fork_launcher_name">הודעות+</string>
+    <string name="spam">ספאם</string>
+    <string name="no_spam_conversations">אין ספאם</string>
+    <string name="mark_as_spam">סימון כספאם</string>
+    <string name="spam_from_spam_number">⚠ ספאם · ממספר ספאם</string>
+    <string name="not_spam">לא ספאם</string>
+    <string name="spam_keywords">מילות מפתח לספאם</string>
+    <string name="no_spam_keywords">אין מילות מפתח לספאם. הודעה שמכילה אחת מהן עוברת לספאם, בלי התראה.</string>
+    <string name="add_spam_keyword">הוספת מילת מפתח לספאם</string>
+    <string name="spam_numbers">מספרי ספאם</string>
+    <string name="no_spam_numbers">אין מספרי ספאם. הודעות מהם עוברות לספאם, בלי התראה. שיחות טלפון לא מושפעות.</string>
+    <string name="add_spam_number">הוספת מספר ספאם</string>
+    <string name="spam_number_hint">מספר (אפשר גם תבנית כמו ‎+1555*)</string>
+    <string name="whole_word_only">מילה שלמה בלבד</string>
+    <string name="keyword_whole_word">%s (מילה שלמה)</string>
+    <string name="check_existing_messages">עדכון סימוני הספאם</string>
+    <string name="checking_existing_messages">מעדכן את סימוני הספאם…</string>
+    <string name="existing_messages_checked">הסתיים: %1$d סומנו כספאם, %2$d הוסר מהן הסימון</string>
+    <string name="add_as_spam_keyword">מילת ספאם</string>
+    <string name="loading_keyword_preview">מחפש בהודעות שהתקבלו…</string>
+    <string name="keyword_preview_none">אין הודעה שהתקבלה שמכילה את זה</string>
+    <plurals name="keyword_preview_count">
+        <item quantity="one">הודעה אחת שהתקבלה מכילה את זה:</item>
+        <item quantity="two">%d הודעות שהתקבלו מכילות את זה:</item>
+        <item quantity="other">%d הודעות שהתקבלו מכילות את זה:</item>
+    </plurals>
+    <string name="keyword_preview_more">… ועוד %d</string>
+    <string name="spam_keyword_from_message">סימון מילות ספאם…</string>
+    <string name="select_spam_keyword_title">לחיצה ארוכה על מילה, התאמת הסימון, ואז ”מילת ספאם”</string>
+    <string name="spam_tag">⚠ ספאם</string>
+    <string name="not_spam_tag">סומן כלא ספאם</string>
+    <string name="suspicious_tag">מילה חשודה</string>
+    <string name="suspicious_exempt_tag">מילה חשודה · מספר מוחרג</string>
+    <string name="show_only_suspicious">רק הודעות חשודות</string>
+    <string name="showing_only_suspicious">מוצגות רק הודעות ספאם והודעות עם מילה חשודה</string>
+    <string name="exempt_from_spam">אף פעם לא ספאם מהמספר הזה</string>
+    <string name="unexempt_from_spam">ביטול ההחרגה מספאם</string>
+    <string name="spam_exempt_numbers">מספרים מוחרגים מספאם</string>
+    <string name="no_spam_exempt_numbers">אין מספרים מוחרגים. הודעות ממספר מוחרג אף פעם לא יסומנו כספאם, גם אם יש בהן מילת מפתח.</string>
+    <string name="add_spam_exempt_number">הוספת מספר מוחרג</string>
+    <string name="mark_sender_as_spam">סימון השולח כספאם</string>
+    <string name="unmark_sender_as_spam">ביטול סימון השולח כספאם</string>
+    <string name="spam_and_blocking">ספאם וחסימה</string>
+    <string name="blocked_numbers_explanation">רשימת החסימה של הטלפון עצמו, משותפת עם אפליקציית הטלפון ואפליקציות הודעות אחרות. הודעות מהמספרים האלה נזרקות לפני שאפליקציה כלשהי מקבלת אותן ואי אפשר לשחזר אותן, וגם השיחות מהם נחסמות. כדי לשמור את ההודעות של מספר בשקט בתיקיית הספאם, השתמשו ב"מספרי ספאם".</string>
+    <string name="about_credits">קרדיט</string>
+    <string name="about_based_on">מבוסס על Fossify Messages</string>
+    <string name="about_based_on_explanation">גרסה ששונתה של Fossify Messages מאת התורמים של Fossify, תוכנה חופשית ברישיון GNU General Public License, גרסה 3. השינויים: ספאם נשמר ואפשר לקרוא אותו. הקישו לפתיחת קוד המקור של המקורית.</string>
+</resources>

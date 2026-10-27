@@ -22,4 +22,42 @@
             android:textSize="@dimen/bigger_text_size" />
 
     </org.fossify.commons.views.MyTextInputLayout>
+
+    <org.fossify.commons.views.MyAppCompatCheckbox
+        android:id="@+id/add_blocked_keyword_whole_word"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/add_blocked_keyword_hint"
+        android:layout_marginStart="@dimen/activity_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:layout_marginEnd="@dimen/activity_margin"
+        android:text="@string/whole_word_only" />
+
+    <!-- net.wzmn.messages: the received messages the keyword would mark as spam -->
+    <org.fossify.commons.views.MyTextView
+        android:id="@+id/add_blocked_keyword_preview_count"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/add_blocked_keyword_whole_word"
+        android:layout_marginStart="@dimen/activity_margin"
+        android:layout_marginTop="@dimen/medium_margin"
+        android:layout_marginEnd="@dimen/activity_margin"
+        android:textStyle="bold" />
+
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/add_blocked_keyword_preview_holder"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/spam_preview_height"
+        android:layout_below="@id/add_blocked_keyword_preview_count"
+        android:layout_marginStart="@dimen/activity_margin"
+        android:layout_marginTop="@dimen/small_margin"
+        android:layout_marginEnd="@dimen/activity_margin">
+
+        <org.fossify.commons.views.MyTextView
+            android:id="@+id/add_blocked_keyword_preview"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAlignment="viewStart"
+            android:textDirection="locale" />
+    </androidx.core.widget.NestedScrollView>
 </RelativeLayout>

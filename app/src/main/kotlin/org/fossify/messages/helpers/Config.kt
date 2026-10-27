@@ -89,6 +89,41 @@ class Config(context: Context) : BaseConfig(context) {
 
     fun removeBlockedKeyword(keyword: String) {
         blockedKeywords = blockedKeywords.minus(keyword)
+        wholeWordKeywords = wholeWordKeywords.minus(keyword)
+    }
+
+    // the blocked keywords that match only as a whole word (the others match inside words too)
+    var wholeWordKeywords: Set<String>
+        get() = prefs.getStringSet(WHOLE_WORD_KEYWORDS, HashSet<String>())!!
+        set(keywords) = prefs.edit().putStringSet(WHOLE_WORD_KEYWORDS, keywords).apply()
+
+    fun setKeywordWholeWord(keyword: String, wholeWord: Boolean) {
+        wholeWordKeywords = if (wholeWord) wholeWordKeywords.plus(keyword) else wholeWordKeywords.minus(keyword)
+    }
+
+    var spamNumbers: Set<String>
+        get() = prefs.getStringSet(SPAM_NUMBERS, HashSet<String>())!!
+        set(spamNumbers) = prefs.edit().putStringSet(SPAM_NUMBERS, spamNumbers).apply()
+
+    fun addSpamNumber(number: String) {
+        spamNumbers = spamNumbers.plus(number)
+    }
+
+    fun removeSpamNumber(number: String) {
+        spamNumbers = spamNumbers.minus(number)
+    }
+
+    // messages from these numbers are never spam, whatever keywords they contain
+    var spamExemptNumbers: Set<String>
+        get() = prefs.getStringSet(SPAM_EXEMPT_NUMBERS, HashSet<String>())!!
+        set(numbers) = prefs.edit().putStringSet(SPAM_EXEMPT_NUMBERS, numbers).apply()
+
+    fun addSpamExemptNumber(number: String) {
+        spamExemptNumbers = spamExemptNumbers.plus(number)
+    }
+
+    fun removeSpamExemptNumber(number: String) {
+        spamExemptNumbers = spamExemptNumbers.minus(number)
     }
 
     var exportSms: Boolean
